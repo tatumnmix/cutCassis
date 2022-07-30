@@ -106,8 +106,8 @@ function Cut(start, end){
 }
 
 function cutSize(){
-  // return Math.round(randMinMax(1, 10));
-  return Math.round(randMinMax(1, 40));
+  return Math.round(randMinMax(1, 10));
+  // return Math.round(randMinMax(1, 40));
 }
 
 function randMinMax(min, max){
