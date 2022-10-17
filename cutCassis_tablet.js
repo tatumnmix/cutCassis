@@ -22,8 +22,14 @@ function preload(){
   frameImg = loadImage('./image/frame.png');
 }
 function setup(){
-  wImg = Math.floor(innerWidth * 0.9);
-  hImg = Math.floor(wImg * float(topImg.height / topImg.width))
+  if(innerWidth >= innerHeight ){
+    hImg = Math.floor(innerHeight * 0.9);
+    wImg = Math.floor(hImg * float(topImg.width / topImg.height));
+  }
+  else{
+    wImg = Math.floor(innerWidth * 0.9);
+    hImg = Math.floor(wImg * float(topImg.height / topImg.width))
+  }
 
   for(var p = 0; p < frameNum; p++){
     backImgs[p].resize(wImg, hImg);
@@ -195,11 +201,11 @@ function windowResized() {
 }
 
 function mX(x) {
-  return x - (width - wImg) / 2;
+  return x - (innerWidth - wImg) / 2;
 }
 
 function mY(y) {
-  return y - 30;
+  return y - (innerHeight - hImg) / 2;
 }
 
 function disableScroll(event) {
