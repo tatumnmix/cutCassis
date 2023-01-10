@@ -1,7 +1,7 @@
 var cutMask = [];
 var wImg,hImg
 var pg;
-var d = 1;
+var d = 4;
 
 const frameNum = 10;
 var pFrame = 0;
@@ -9,9 +9,12 @@ var topImg;
 var backImgs = [];
 var frameImg;
 
-var cutting = false;
+var sMax = 15;
+var sMin = 9;
 
-var tips = [];
+var f = 0;
+var started = null;
+var tipLen = 5;
 
 function preload(){
   topImg = loadImage('./image/cassis.jpg');
@@ -22,6 +25,7 @@ function preload(){
   frameImg = loadImage('./image/frame.png');
 }
 function setup(){
+  // 縦横対応
   if(innerWidth >= innerHeight ){
     hImg = Math.floor(innerHeight * 0.9);
     wImg = Math.floor(hImg * float(topImg.width / topImg.height));
@@ -30,7 +34,7 @@ function setup(){
     wImg = Math.floor(innerWidth * 0.9);
     hImg = Math.floor(wImg * float(topImg.height / topImg.width))
   }
-
+  // 背景アニメーションの設定
   for(var p = 0; p < frameNum; p++){
     backImgs[p].resize(wImg, hImg);
   }
@@ -56,40 +60,31 @@ function draw(){
     }
     for(var p = 1; p < cutMask.length; p++){
       cutMask[p].display();
-      if(tips[p] == "end"){
-      
-      }
     }
   }
   image(pg, (innerWidth - wImg) / 2, (innerHeight - hImg) / 2);
 
   pFrame = (pFrame + 1) % frameNum;
-
-  // console.log(cutting)
 }
 
 function touchMoved(){
-  // ellipse(touches[0].x, touches[0].y, 50,50);
-  Cut(false, false);
+  Cut(false);
 }
 
 function touchStarted(){
-  Cut(true, false);
-  // cutting = true;
+  Cut(false);
+  started = f;
 }
 
 function touchEnded(){
-  Cut(false, true);
-  // cutting = false;
+  Cut(true);
 }
 
-function Cut(start, end){
+function Cut(end){
   // 切り傷の太さ
-  let s = Math.round(randMinMax(10, 30));
+  let s = Math.round(randMinMax(sMin, sMax));
 
-  cutMask.push(new mask(mX(mouseX), mY(mouseY), s, Math.round(randMinMax(50,500))));
-
-  tips.push( (start || end ) ? (start ? "start" : "end") : "");
+  cutMask.push(new mask(mX(mouseX), mY(mouseY), s, Math.round(randMinMax(50,200))));
   
   //補完
   var distX = mouseX - pmouseX;
@@ -100,32 +95,23 @@ function Cut(start, end){
   var dY = distY / plotNum;
 
   for(var p = 1; p <= plotNum; p++){
-    cutMask.push(new mask(mX(mouseX) + p * dX, mY(mouseY) + p * dY, s, 0));
+    cutMask.push(new mask(mX(mouseX) + p * dX, mY(mouseY) + p * dY, Math.round(randMinMax(sMin, sMax)), 0));
   }
 
-  // //先端の処理
-  // if(start){
-  //   for(var p = 1; p <= 100; p++){
-  //     cutMask.push(new mask(mX(mouseX) - p * dX, mY(mouseY) - p * dY, s * Math.pow(0.99, p),0 ));
-  //   }
-  //   console.log("cut start");
-  // }
-  // else if(end){
-  //   for(var p = 1; p <= 100; p++){
-  //     cutMask.push(new mask(mX(mouseX) + p * dX, mY(mouseY) + p * dY, s * Math.pow(0.99, p),0 ));
-  //   }
-  //   console.log("cut end");
-  // }
-
-}
-
-function cutSize(){
-  return Math.round(randMinMax(1, 10));
-  // return Math.round(randMinMax(1, 40));
-}
-
-function randMinMax(min, max){
-  return Math.random() * (max - min) + min
+  //先端の処理
+  if(f == started + 1){
+    for(var p = 1; p <= int(dist*tipLen); p++){
+      cutMask.push(new mask(mX(mouseX) - p * dX, mY(mouseY) - p * dY, s * Math.pow(0.96, p),0 ));
+    }
+    started = null;
+  }
+  
+  if(end){
+    for(var p = 1; p <= int(dist*tipLen); p++){
+      cutMask.push(new mask(mX(mouseX) + p * dX, mY(mouseY) + p * dY, s * Math.pow(0.98, p),0 ));
+    }
+  }
+  f++;
 }
 
 const mask = class{
@@ -146,6 +132,7 @@ const mask = class{
   //血液
   displayBlood(){
     pg.fill(255,10,110+randMinMax(-15,15),90 + randMinMax(-10, 100));
+    // pg.ellipseMode(CORNER);
     pg.ellipse(this.x, this.y, this.s * randMinMax(1.3, 1.9));
     if(this.lifeTime % this.dropFreq == 0){
       this.dropBloods.push(new blood(this.x, this.y, this.s));
@@ -176,17 +163,18 @@ const blood = class{
     this.g = 9.8;
     this.v = 0;
     this.t = 0;
-    this.sMax = s * randMinMax(0.5, 1.5);
+    this.sizeMax = s * randMinMax(1.1, 1.5);
   }
   
   display(){
-    pg.fill(255,10,110,90);
+    pg.fill(255,10,110,90 + randMinMax(-10, 100));
+    // pg.ellipseMode(CORNER);
     pg.ellipse(this.x, this.y, this.s * randMinMax(0.8, 1.2), this.s * randMinMax(1.2, 1.5));
     this.t++;
   }
 
   drop(){
-    if(this.s < this.sMax){
+    if(this.s < this.sizeMax){
       this.s *= 1.01;
     }
     else{
@@ -210,6 +198,10 @@ function mY(y) {
 
 function disableScroll(event) {
   event.preventDefault();
+}
+
+function randMinMax(min, max){
+  return Math.random() * (max - min) + min;
 }
 
 // イベントと関数を紐付け
